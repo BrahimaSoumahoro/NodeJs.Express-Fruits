@@ -1,7 +1,9 @@
+require('dotenv').config();
 const express = require('express')
-
 // Data
 const fruits = require('./Models/fruits');
+const Fruit = require('./Models/Fruit')
+const { default: mongoose } = require('mongoose');
 // const Index = require('./views/Index');
 // const req = require('express/lib/request');
 // const res = require('express/lib/response');
@@ -31,7 +33,7 @@ app.use(express.urlencoded({extended: false}))
 
 // const fruits = ['apple', 'banana', 'pear']
 
-app.get('/', (req, res) => {res.send('<h1>Hello World!</h1>')
+app.get('/', (req, res) => {res.send('<h1>Welcome to Healthy Eating, smart choice!</h1>')
 })
 
 
@@ -39,7 +41,19 @@ app.get('/', (req, res) => {res.send('<h1>Hello World!</h1>')
  * Index Route: (returns the entire list  of fruits). This is like entire basket of fruits
  */
 app.get('/fruits', (req, res) => {
-    res.render('Index', {fruits: fruits})
+    // res.send(fruits)
+    // res.render('fruits/Index', {fruits: fruits})
+    Fruit.find({}, (error, allFruits) => {
+        res.render('fruits/Index', {fruits: allFruits})
+    })
+})
+
+app.get('/vegetables', (req, res) => {
+    // res.send(Vegetables)
+    // res.render('vegetables/Index', {vegetables: vegetables})
+    Fruit.find({}, (error, allvegetables) => {
+        res.render('vegetables/Index', {vegetables_Mong: allvegetables})
+    })
 })
 
 // POST: To send data from a form being accept here
@@ -51,13 +65,17 @@ app.post('/fruits', (req, res) => {
         req.body.readyToEat = false;
     }
 
-    fruits.push(req.body)
-    res.redirect('/fruits')
+    // fruits.push(req.body)
+    Fruit.create(req.body, (error, createdFruit) => {
+        // res.send(createdFruit)
+        res.redirect('/fruits')
+    })
+    
 })
 
 // New Route:  (return a form to create a new fruit)
 app.get('/fruits/new', (req, res) => {
-    res.render('New')
+    res.render('fruits/New')
 })
 
 
@@ -65,11 +83,14 @@ app.get('/fruits/new', (req, res) => {
  * Show Route: (returns an single fruit). This is as picking and showing 
  * one specific fruit of choice in the basket.
  */
-app.get('/fruits/:indexOfFruitArray', (req, res) => {
+app.get('/fruits/:id', (req, res) => {
     // res.send(fruits[req.params.indexOfFruits])
-    res.render('Show', {fruit: fruits[req.params.indexOfFruitArray]}
-    );
-})
+    // res.render('fruits/Show', {fruit: fruits[req.params.indexOfFruitArray]}
+    Fruit.findById(req.params.id, (error, foundFruit) => {
+        res.render('fruits/Show', {fruit: foundFruit})
+    })
+});
+// })
 
 
 /**
@@ -81,4 +102,17 @@ app.get('*', (req, res) => {
 })
 
 
-app.listen(port, () => console.log(`Fruits are listening on port ${port}!`))
+app.listen(port, () => {
+    console.log(`Fruits and Vegetables are listening on port ${port}!`)
+
+// to get rid off the warning message 
+mongoose.set('strictQuery', true)
+// connect to mongoDB
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+mongoose.connection.once('open', () => {
+    console.log('Connected to MongoDB')
+})
+});
